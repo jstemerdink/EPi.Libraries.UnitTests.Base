@@ -6,7 +6,7 @@
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
-    <projectUrl>https://github.com/jstemerdink/EPi.Libraries.UnitTests.Base/tree/master/EPi.Libraries.UnitTests.Base</projectUrl>
+    <projectUrl>https://github.com/jstemerdink/EPi.Libraries.UnitTests.Base</projectUrl>
     <iconUrl>http://world.episerver.com/PageFiles/3/Icons/Nuget.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
