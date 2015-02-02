@@ -117,8 +117,6 @@ namespace EPi.Libraries.UnitTests.Base
         {
             ContentReference.RootPage = new PageReference(1).CreateWritableClone();
 
-            ////ContentReference.StartPage.CreateWritableClone().ID = 4;
-
             SiteDefinition.Current = A.Fake<SiteDefinition>();
             SiteDefinition.Current = new SiteDefinition { StartPage = new PageReference(4) };
 
