@@ -210,6 +210,9 @@
     <None Include="packages.config" />
     <None Include="Solution Files\EPiServer.Libraries.snk" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="readme.txt" />
+  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>

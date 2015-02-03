@@ -1,13 +1,5 @@
-﻿# A base class for unit testing EPiServer with FakeItEasy. 
+﻿You can implement the base class as follows:
 
-By Jeroen Stemerdink
-
-## About
-
-The base library will fake the most used functionalities in EPiServer.
-
-**You can implement the base class as follows:**
-```csharp
     public abstract class MySpecs
     {
         [UsedImplicitly]
@@ -26,9 +18,9 @@ The base library will fake the most used functionalities in EPiServer.
         [NotNull]
         public static CmsContext CmsContext { get; set; }        
     }
-```
-**And use it in your subjects:**
-```csharp
+
+And use it in your subjects:
+
 [Subject("MySubject")]
     public class Test_something : MySpecs
     {
@@ -38,4 +30,4 @@ The base library will fake the most used functionalities in EPiServer.
 
         private It should_be_named_StartPage = () => result.ShouldEqual("StartPage");
     }
-```
+
