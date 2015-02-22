@@ -208,6 +208,7 @@
     <None Include="app.config" />
     <None Include="EPi.Libraries.UnitTests.Base.nuspec" />
     <None Include="packages.config" />
+    <None Include="README.md" />
     <None Include="Solution Files\EPiServer.Libraries.snk" />
   </ItemGroup>
   <ItemGroup>

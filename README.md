@@ -2,6 +2,8 @@
 
 By Jeroen Stemerdink
 
+[![Build status](https://ci.appveyor.com/api/projects/status/wyn06vb5oa69vl4r/branch/master?svg=true)](https://ci.appveyor.com/project/jstemerdink/epi-libraries-unittests-base/branch/master)
+
 ## About
 
 The base library will fake the most used functionalities in EPiServer.
