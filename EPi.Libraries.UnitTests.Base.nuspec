@@ -10,7 +10,7 @@
     <iconUrl>http://world.episerver.com/PageFiles/3/Icons/Nuget.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Initial release</releaseNotes>
+    <releaseNotes>Updated for EPiServer 8</releaseNotes>
     <copyright>Copyright © Jeroen Stemerdink 2015</copyright>
     <tags>unit test fakes FakeItEasy</tags>
     <dependencies>
