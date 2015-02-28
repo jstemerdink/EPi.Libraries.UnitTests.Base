@@ -117,6 +117,8 @@ namespace EPi.Libraries.UnitTests.Base
         {
             ContentReference.RootPage = new PageReference(1).CreateWritableClone();
 
+            ////ContentReference.StartPage.CreateWritableClone().ID = 4;
+
             SiteDefinition.Current = A.Fake<SiteDefinition>();
             SiteDefinition.Current = new SiteDefinition { StartPage = new PageReference(4) };
 
@@ -137,6 +139,8 @@ namespace EPi.Libraries.UnitTests.Base
             this.ContentTypeRepository = A.Fake<IContentTypeRepository>();
 
             this.LanguageBranchRepository = A.Fake<ILanguageBranchRepository>();
+
+            this.LoaderOptions = A.Fake<LoaderOptions>();
 
             this.LocalizationService = A.Fake<LocalizationService>();
 
@@ -179,7 +183,7 @@ namespace EPi.Libraries.UnitTests.Base
                     .Returns(new[] { new LanguageBranch(MasterLanguage), new LanguageBranch(SecondLanguage) });
             }
 
-            this.RegisterFakes();
+            this.RegisterMocks();
 
             HttpContextBase = this.CreateFakeHttpContext();
         }
@@ -229,6 +233,9 @@ namespace EPi.Libraries.UnitTests.Base
 
         [NotNull]
         public ILanguageBranchRepository LanguageBranchRepository { get; set; }
+
+        [NotNull]
+        public LoaderOptions LoaderOptions { get; set; }
 
         /// <summary>
         ///     Gets or sets the localization service.
@@ -330,7 +337,7 @@ namespace EPi.Libraries.UnitTests.Base
 
             page.Property["PageMasterLanguageBranch"] = new PropertyString(MasterLanguage.Name);
             page.Property["PageLanguageBranch"] = new PropertyString(MasterLanguage.Name);
-            page.Language = new CultureInfo(MasterLanguage.Name);
+            page.Language = MasterLanguage;
 
             page.Property["PageParentLink"] = new PropertyPageReference(parentLink);
 
@@ -340,7 +347,7 @@ namespace EPi.Libraries.UnitTests.Base
                                    ? ContentReference.StartPage
                                    : new PageReference(++this.nextPageId);
 
-            page.ExistingLanguages = new List<CultureInfo> { new CultureInfo(MasterLanguage.Name) };
+            page.ExistingLanguages = new List<CultureInfo> { MasterLanguage };
 
             // If no ContentType can be found, just create the ContentData without a ContentType
             if (contentType.ID > 0)
@@ -366,7 +373,7 @@ namespace EPi.Libraries.UnitTests.Base
         /// <param name="contentLink">
         ///     The content link.
         /// </param>
-        /// <param name="languageSelector">
+        /// <param name="language">
         ///     The language selector.
         /// </param>
         /// <returns>
@@ -381,10 +388,10 @@ namespace EPi.Libraries.UnitTests.Base
         [NotNull]
         public T CreateLanguageVersionOfContent<T>(
             [NotNull] ContentReference contentLink,
-            [NotNull] LanguageSelector languageSelector) where T : PageData, new()
+            [NotNull] CultureInfo language) where T : PageData, new()
         {
             // Get the original page
-            T page = this.ContentRepository.Get<T>(contentLink, new LanguageSelector(CultureInfo.CurrentUICulture.Name));
+            T page = this.ContentRepository.Get<T>(contentLink, CultureInfo.CurrentUICulture);
 
             if (page == null)
             {
@@ -400,19 +407,14 @@ namespace EPi.Libraries.UnitTests.Base
             }
 
             // Set the language to the new version
-            languageVersion.Language = new CultureInfo(languageSelector.LanguageBranch);
+            languageVersion.Language = language;
 
             // Set the contentlink to self, as it is a language version
             languageVersion.ContentLink = contentLink;
 
             // Add new language to the version
             languageVersion.ExistingLanguages =
-                page.ExistingLanguages =
-                new List<CultureInfo>
-                    {
-                        new CultureInfo(page.LanguageBranch),
-                        new CultureInfo(languageSelector.LanguageBranch)
-                    };
+                page.ExistingLanguages = new List<CultureInfo> { page.Language, language };
 
             this.AddChild<T>(page.ParentLink, languageVersion);
 
@@ -490,15 +492,14 @@ namespace EPi.Libraries.UnitTests.Base
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="content">The content.</param>
-        /// <param name="languageSelector">The language selector.</param>
-        public void UpdateContent<T>([NotNull] T content, [NotNull] LanguageSelector languageSelector)
-            where T : PageData, new()
+        /// <param name="language">The language.</param>
+       public void UpdateContent<T>([NotNull] T content, [NotNull] CultureInfo language) where T : PageData, new()
         {
             T[] items = this.childPages[content.ParentLink].OfType<T>().ToArray();
             int i = 0;
             foreach (T page in items)
             {
-                if (page.ContentLink == content.ContentLink && page.LanguageBranch == languageSelector.LanguageBranch)
+                if (page.ContentLink == content.ContentLink && page.Language.Equals(language))
                 {
                     items[i] = content;
                     break;
@@ -549,23 +550,20 @@ namespace EPi.Libraries.UnitTests.Base
             A.CallTo(() => this.ContentRepository.Get<PageData>(child.ContentLink))
                 .Returns(this.childPages[parentLink].OfType<T>().First(p => p.ContentLink == child.ContentLink));
 
-            A.CallTo(() => this.ContentRepository.Get<T>(child.ContentLink, A<LanguageSelector>.Ignored))
+            A.CallTo(() => this.ContentRepository.Get<T>(child.ContentLink, A<CultureInfo>.Ignored))
                 .ReturnsLazily(
                     m =>
                     this.childPages[parentLink].OfType<T>()
                         .First(
-                            p =>
-                            p.ContentLink == child.ContentLink
-                            && p.LanguageBranch == m.GetArgument<LanguageSelector>(1).LanguageBranch));
+                            p => p.ContentLink == child.ContentLink && p.Language.Equals(m.GetArgument<CultureInfo>(1))));
 
             A.CallTo(() => this.ContentRepository.GetLanguageBranches<T>(child.ContentLink))
                 .Returns(this.childPages[parentLink].OfType<T>().Where(c => c.ContentLink == child.ContentLink));
 
-            A.CallTo(() => this.ContentRepository.GetChildren<T>(parentLink, A<LanguageSelector>.Ignored))
+            A.CallTo(() => this.ContentRepository.GetChildren<T>(parentLink, A<CultureInfo>.Ignored))
                 .ReturnsLazily(
                     m =>
-                    this.childPages[parentLink].OfType<T>()
-                        .Where(p => p.LanguageBranch == m.GetArgument<LanguageSelector>(1).LanguageBranch));
+                    this.childPages[parentLink].OfType<T>().Where(p => p.Language.Equals(m.GetArgument<CultureInfo>(1))));
 
             A.CallTo(() => this.ContentRepository.GetAncestors(child.ContentLink))
                 .ReturnsLazily(m => this.GetAncestors(child));
@@ -644,11 +642,6 @@ namespace EPi.Libraries.UnitTests.Base
             }
         }
 
-        /// <summary>
-        ///     Gets the ancestors.
-        /// </summary>
-        /// <param name="content">The content.</param>
-        /// <returns>IEnumerable&lt;IContent&gt;.</returns>
         [NotNull]
         private IEnumerable<IContent> GetAncestors([NotNull] IContent content)
         {
@@ -673,9 +666,9 @@ namespace EPi.Libraries.UnitTests.Base
         }
 
         /// <summary>
-        ///     Register some fakes for EPiServer calls for getting pagedata.
+        ///     Register some mocks for EPiServer calls for getting pagedata.
         /// </summary>
-        private void RegisterFakes()
+        private void RegisterMocks()
         {
             A.CallTo(() => this.ContentLoader.GetChildren<IContent>(A<ContentReference>.Ignored))
                 .ReturnsLazily(m => this.childPages[m.GetArgument<ContentReference>(0)].OfType<PageData>());
@@ -684,11 +677,11 @@ namespace EPi.Libraries.UnitTests.Base
                 .ReturnsLazily(m => this.childPages[m.GetArgument<ContentReference>(0)].OfType<PageData>());
 
             A.CallTo(
-                () => this.ContentLoader.GetChildren<PageData>(A<ContentReference>.Ignored, A<LanguageSelector>.Ignored))
+                () => this.ContentLoader.GetChildren<PageData>(A<ContentReference>.Ignored, A<CultureInfo>.Ignored))
                 .ReturnsLazily(
                     m =>
                     this.childPages[m.GetArgument<ContentReference>(0)].OfType<PageData>()
-                        .Where(p => p.LanguageBranch == m.GetArgument<LanguageSelector>(1).LanguageBranch));
+                        .Where(p => p.Language.Equals(m.GetArgument<CultureInfo>(1))));
 
             A.CallTo(() => this.ContentRepository.GetChildren<IContent>(A<ContentReference>.Ignored))
                 .ReturnsLazily(m => this.childPages[m.GetArgument<ContentReference>(0)].OfType<PageData>());
@@ -697,12 +690,11 @@ namespace EPi.Libraries.UnitTests.Base
                 .ReturnsLazily(m => this.childPages[m.GetArgument<ContentReference>(0)].OfType<PageData>());
 
             A.CallTo(
-                () =>
-                this.ContentRepository.GetChildren<PageData>(A<ContentReference>.Ignored, A<LanguageSelector>.Ignored))
+                () => this.ContentRepository.GetChildren<PageData>(A<ContentReference>.Ignored, A<CultureInfo>.Ignored))
                 .ReturnsLazily(
                     m =>
                     this.childPages[m.GetArgument<ContentReference>(0)].OfType<PageData>()
-                        .Where(p => p.LanguageBranch == m.GetArgument<LanguageSelector>(1).LanguageBranch));
+                        .Where(p => p.Language.Equals(m.GetArgument<CultureInfo>(1))));
 
             A.CallTo(() => this.ContentRepository.GetDescendents(A<ContentReference>.Ignored))
                 .ReturnsLazily(m => this.GetAll(m.GetArgument<ContentReference>(0)).Distinct());
