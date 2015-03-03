@@ -120,7 +120,7 @@ namespace EPi.Libraries.UnitTests.Base
             ////ContentReference.StartPage.CreateWritableClone().ID = 4;
 
             SiteDefinition.Current = A.Fake<SiteDefinition>();
-            SiteDefinition.Current = new SiteDefinition { StartPage = new PageReference(4) };
+            SiteDefinition.Current.StartPage = new PageReference(4);
 
             this.StartPageUrl = "/";
 
